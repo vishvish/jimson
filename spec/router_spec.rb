@@ -39,8 +39,8 @@ module Jimson
             namespace 'ns', RouterBarHandler
           end
 
-          router.handler_for_method('hi').should be_a(RouterFooHandler)
-          router.handler_for_method('ns.hi').should be_a(RouterBarHandler)
+          expect(router.handler_for_method('hi')).to be_a(RouterFooHandler)
+          expect(router.handler_for_method('ns.hu')).to be_a(RouterBarHandler)
         end
       end
 
@@ -56,17 +56,17 @@ module Jimson
         }
         context 'default ns_sep' do
           it 'takes a block with a DSL to set the root and namespaces' do
-            router.handler_for_method('hi').should be_a(RouterFooHandler)
-            router.handler_for_method('ns1.hi').should be_a(RouterBazHandler)
-            router.handler_for_method('ns1.ns2.hi').should be_a(RouterBarHandler)
+            expect(router.handler_for_method('hi')).to be_a(RouterFooHandler)
+            expect(router.handler_for_method('ns1.hi')).to be_a(RouterBazHandler)
+            expect(router.handler_for_method('ns1.ns2.hi')).to be_a(RouterBarHandler)
           end
         end
         context 'custom ns_sep' do
           let(:opts) { {ns_sep: '::'} }
           it 'takes a block with a DSL to set the root and namespaces' do
-            router.handler_for_method('hi').should be_a(RouterFooHandler)
-            router.handler_for_method('ns1::hi').should be_a(RouterBazHandler)
-            router.handler_for_method('ns1::ns2::hi').should be_a(RouterBarHandler)
+            expect(router.handler_for_method('hi')).to be_a(RouterFooHandler)
+            expect(router.handler_for_method('ns1::hi')).to be_a(RouterBazHandler)
+            expect(router.handler_for_method('ns1::ns2::hi')).to be_a(RouterBarHandler)
           end
         end
 
@@ -82,13 +82,13 @@ module Jimson
       }
       context 'default ns_sep' do
         it 'returns an array of namespaced method names from all registered handlers' do
-          router.jimson_methods.sort.should == ['hi', 'foo.bye'].sort
+          expect(router.jimson_methods.sort).to eq(['hi', 'foo.bye'].sort)
         end
       end
       context 'custom ns_sep' do
         let(:opts) { {ns_sep: '::'} }
         it 'returns an array of namespaced method names from all registered handlers' do
-          router.jimson_methods.sort.should == ['hi', 'foo::bye'].sort
+          expect(router.jimson_methods.sort).to eq(['hi', 'foo::bye'].sort)
         end
       end
     end
