@@ -9,7 +9,7 @@ module Jimson
     JSON_RPC_VERSION = '2.0'
 
     def self.make_id
-      rand(10**12)
+      rand(10 ** 12)
     end
 
     def initialize(url, opts = {}, namespace = nil, client_opts = {})
@@ -21,7 +21,7 @@ module Jimson
       @client_opts = client_opts
 
       @batch = []
-      @headers = opts.slice( * opts.keys - [:id_type] )
+      @headers = opts.slice(* opts.keys - [:id_type])
       @headers[:content_type] ||= 'application/json'
     end
 
@@ -36,19 +36,19 @@ module Jimson
 
       return process_single_response(data)
 
-      rescue Exception, StandardError => e
-        e.extend(Client::Error) unless e.is_a?(Client::Error)
-        raise e
+    rescue Exception, StandardError => e
+      e.extend(Client::Error) unless e.is_a?(Client::Error)
+      raise e
     end
 
     def send_single_request(method, args)
       namespaced_method = @namespace.nil? ? method : "#@namespace#{method}"
       post_data = MultiJson.encode({
-        'jsonrpc' => JSON_RPC_VERSION,
-        'method'  => namespaced_method,
-        'params'  => args,
-        'id'      => format_post_id(self.class.make_id)
-      })
+                                     'jsonrpc' => JSON_RPC_VERSION,
+                                     'method' => namespaced_method,
+                                     'params' => args,
+                                     'id' => format_post_id(self.class.make_id)
+                                   })
       resp = RestClient::Request.execute(@client_opts.merge(:method => :post, :url => @url, :payload => post_data, :headers => @headers))
       if resp.nil? || resp.body.nil? || resp.body.empty?
         raise Client::Error::InvalidResponse.new(resp)
@@ -64,7 +64,7 @@ module Jimson
         raise Client::Error::InvalidResponse.new(resp)
       end
 
-      return resp.body
+      resp.body
     end
 
     def process_batch_response(responses)
@@ -84,32 +84,30 @@ module Jimson
         raise Client::Error::ServerError.new(code, msg)
       end
 
-      return data['result']
+      data['result']
     end
 
     def valid_response?(data)
-      return false if !data.is_a?(Hash)
+      return false unless data.is_a?(Hash)
 
       # return false if data['jsonrpc'] != JSON_RPC_VERSION
 
-      return false if !data.has_key?('id')
+      return false unless data.has_key?('id')
 
-      return false if data.has_key?('error') && data.has_key?('result')
-
-      if data.has_key?('error')
+      unless data['error'].nil?
+        return true if data['error'].nil?
         if !data['error'].is_a?(Hash) || !data['error'].has_key?('code') || !data['error'].has_key?('message')
           return false
         end
-
         if !data['error']['code'].is_a?(Integer) || !data['error']['message'].is_a?(String)
           return false
         end
       end
 
-      return true
+      true
 
-      rescue
-        return false
+    rescue
+      return false
     end
 
     def push_batch_request(request)
@@ -134,7 +132,7 @@ module Jimson
     end
 
     def format_post_id(id)
-      if @opts[:id_type] == :string 
+      if @opts[:id_type] == :string
         id.to_s
       else
         id
@@ -176,7 +174,7 @@ module Jimson
 
     def method_missing(sym, *args, &block)
       args = args.first if args.size == 1 && args.first.is_a?(Hash)
-      @helper.process_call(sym, args) 
+      @helper.process_call(sym, args)
     end
 
     def [](method, *args)
@@ -186,7 +184,7 @@ module Jimson
         return Client.new(@url, @opts, new_ns)
       end
       args = args.first if args.size == 1 && args.first.is_a?(Hash)
-      @helper.process_call(method, args) 
+      @helper.process_call(method, args)
     end
 
   end
