@@ -90,7 +90,7 @@ module Jimson
     def valid_response?(data)
       return false if !data.is_a?(Hash)
 
-      return false if data['jsonrpc'] != JSON_RPC_VERSION
+      # return false if data['jsonrpc'] != JSON_RPC_VERSION
 
       return false if !data.has_key?('id')
 
