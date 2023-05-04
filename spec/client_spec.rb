@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'pry'
 
 module Jimson
   describe Client do
@@ -6,7 +7,7 @@ module Jimson
 
     before(:each) do
       @resp_mock = double('http_response')
-      ClientHelper.stub(:make_id).and_return(1)
+      allow(ClientHelper).to receive(:make_id).and_return(1)
     end
 
     after(:each) do
@@ -14,11 +15,11 @@ module Jimson
 
     describe "hidden methods" do
       it "should reveal inspect" do
-        Client.new(SPEC_URL).inspect.should match /Jimson::Client/
+        expect(Client.new(SPEC_URL).inspect).to match /Jimson::Client/
       end
 
       it "should reveal to_s" do
-        Client.new(SPEC_URL).to_s.should match /Jimson::Client/
+        expect(Client.new(SPEC_URL).to_s).to match /Jimson::Client/
       end
     end
 
@@ -29,60 +30,89 @@ module Jimson
 
       context "when using a symbol to specify a namespace" do
         it "sends the method prefixed with the namespace in the request" do
-          expected = MultiJson.encode({
-           'jsonrpc' => '2.0',
-           'method'  => 'foo.sum',
-           'params'  => [1,2,3],
-           'id'      => 1
+          expected = MultiJson.dump({
+           'jsonrpc': '2.0',
+           'method': 'foo.sum',
+           'params': [1,2,3],
+           'id': 1
           })
-          response = MultiJson.encode(BOILERPLATE.merge({'result' => 42}))
-          RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: expected, headers: {:content_type => 'application/json'}).and_return(@resp_mock)
-          @resp_mock.should_receive(:body).at_least(:once).and_return(response)
-          @client[:foo].sum(1, 2, 3).should == 42
+
+          response = MultiJson.encode(BOILERPLATE.merge({ 'result': 42 }))
+
+          expect(RestClient::Request).to receive(:execute).with({
+                                                                  method: :post,
+                                                                  url: SPEC_URL,
+                                                                  payload: expected,
+                                                                  headers: { content_type: 'application/json' } })
+                                                          .and_return(@resp_mock)
+
+          expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
+          expect(@client[:foo].sum(1, 2, 3)).to eq 42
         end
 
         context "when the namespace is nested" do
           it "sends the method prefixed with the full namespace in the request" do
-            expected = MultiJson.encode({
+            expected = MultiJson.dump({
              'jsonrpc' => '2.0',
              'method'  => 'foo.bar.sum',
              'params'  => [1,2,3],
              'id'      => 1
             })
-            response = MultiJson.encode(BOILERPLATE.merge({'result' => 42}))
-            RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: expected, headers: {:content_type => 'application/json'}).and_return(@resp_mock)
-            @resp_mock.should_receive(:body).at_least(:once).and_return(response)
-            @client[:foo][:bar].sum(1, 2, 3).should == 42
+            response = MultiJson.dump(BOILERPLATE.merge({'result': 42}))
+
+            expect(RestClient::Request).to receive(:execute).with({
+                                                                    method: :post,
+                                                                    url: SPEC_URL,
+                                                                    payload: expected,
+                                                                    headers: { content_type: 'application/json' } })
+                                                            .and_return(@resp_mock)
+
+            expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
+            expect(@client[:foo][:bar].sum(1, 2, 3)).to eq 42
           end
         end
 
-        context "when sending named paramaters" do
+        context "when sending named parameters" do
           it "sends the the params as a hash" do
-            expected = MultiJson.encode({
+            expected = MultiJson.dump({
              'jsonrpc' => '2.0',
              'method'  => 'foo.sum',
-             'params'  => { :first_number => 5, :second_number => 6 },
+             'params'  => { first_number: 5, second_number: 6 },
              'id'      => 1
             })
-            response = MultiJson.encode(BOILERPLATE.merge({'result' => 11}))
-            RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: expected, headers: {:content_type => 'application/json'}).and_return(@resp_mock)
-            @resp_mock.should_receive(:body).at_least(:once).and_return(response)
-            @client[:foo].sum({:first_number => 5, :second_number => 6}).should == 11
+            response = MultiJson.dump(BOILERPLATE.merge({'result': 11}))
+
+            expect(RestClient::Request).to receive(:execute).with({
+                                                                    method: :post,
+                                                                    url: SPEC_URL,
+                                                                    payload: expected,
+                                                                    headers: { content_type: 'application/json' } })
+                                                            .and_return(@resp_mock)
+
+            expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
+            expect(@client[:foo].sum({ first_number: 5, second_number: 6 })).to eq 11
           end
         end
 
         it "sends the id as string" do
-          expected = MultiJson.encode({
+          expected = MultiJson.dump({
            'jsonrpc' => '2.0',
            'method'  => 'foo.sum',
            'params'  => [1,2,3],
            'id'      => "1"
           })
-          response = MultiJson.encode(BOILERPLATE.merge({'result' => 42}))
-          RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: expected, headers: {:content_type => 'application/json'}).and_return(@resp_mock)
-          @resp_mock.should_receive(:body).at_least(:once).and_return(response)
+          response = MultiJson.dump(BOILERPLATE.merge({'result': 42}))
+
+          expect(RestClient::Request).to receive(:execute).with({
+                                                                  method: :post,
+                                                                  url: SPEC_URL,
+                                                                  payload: expected,
+                                                                  headers: { content_type: 'application/json' } })
+                                                          .and_return(@resp_mock)
+
+          expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
           client = Client.new(SPEC_URL, {id_type: :string})
-          client[:foo].sum(1, 2, 3).should == 42
+          expect(client[:foo].sum(1, 2, 3)).to eq 42
         end
       end
 
@@ -94,10 +124,17 @@ module Jimson
            'params'  => [1,2,3],
            'id'      => 1
           })
-          response = MultiJson.encode(BOILERPLATE.merge({'result' => 42}))
-          RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: expected, headers: {:content_type => 'application/json'}).and_return(@resp_mock)
-          @resp_mock.should_receive(:body).at_least(:once).and_return(response)
-          @client['foo', 1, 2, 3].should == 42
+          response = MultiJson.dump(BOILERPLATE.merge({'result': 42}))
+
+          expect(RestClient::Request).to receive(:execute).with({
+                                                                  method: :post,
+                                                                  url: SPEC_URL,
+                                                                  payload: expected,
+                                                                  headers: { content_type: 'application/json' } })
+                                                          .and_return(@resp_mock)
+
+          expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
+          expect(@client['foo', 1, 2, 3]).to eq 42
         end
 
         context "when one of the args is an array" do
@@ -108,10 +145,17 @@ module Jimson
              'params'  => [[1,2],3],
              'id'      => 1
             })
-            response = MultiJson.encode(BOILERPLATE.merge({'result' => 42}))
-            RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: expected, headers: {:content_type => 'application/json'}).and_return(@resp_mock)
-            @resp_mock.should_receive(:body).at_least(:once).and_return(response)
-            @client['foo', [1, 2], 3].should == 42
+            response = MultiJson.dump(BOILERPLATE.merge({'result': 11}))
+
+            expect(RestClient::Request).to receive(:execute).with({
+                                                                    method: :post,
+                                                                    url: SPEC_URL,
+                                                                    payload: expected,
+                                                                    headers: { content_type: 'application/json' } })
+                                                            .and_return(@resp_mock)
+
+            expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
+            expect(@client['foo', [1, 2], 3]).to eq 11
           end
         end
       end
@@ -128,67 +172,110 @@ module Jimson
           })
         end
         it "sends a valid JSON-RPC request and returns the result" do
-          response = MultiJson.encode(BOILERPLATE.merge({'result' => 42}))
-          RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: @expected, headers: {:content_type => 'application/json'}).and_return(@resp_mock)
-          @resp_mock.should_receive(:body).at_least(:once).and_return(response)
+          response = MultiJson.dump(BOILERPLATE.merge({'result': 42}))
+
+          expect(RestClient::Request).to receive(:execute).with({
+                                                                  method: :post,
+                                                                  url: SPEC_URL,
+                                                                  payload: @expected,
+                                                                  headers: { content_type: 'application/json' } })
+                                                          .and_return(@resp_mock)
+
+          expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
           client = Client.new(SPEC_URL)
-          client.foo(1,2,3).should == 42
+          expect(client.foo(1,2,3)).to eq 42
         end
 
         it "sends a valid JSON-RPC request with custom options" do
-          response = MultiJson.encode(BOILERPLATE.merge({'result' => 42}))
-          RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: @expected, headers: {:content_type => 'application/json', :timeout => 10000}).and_return(@resp_mock)
-          @resp_mock.should_receive(:body).at_least(:once).and_return(response)
+          response = MultiJson.dump(BOILERPLATE.merge({'result': 42}))
+
+          expect(RestClient::Request).to receive(:execute).with({
+                                                                  method: :post,
+                                                                  url: SPEC_URL,
+                                                                  payload: @expected,
+                                                                  headers: { content_type: 'application/json', timeout: 10000 } })
+                                                          .and_return(@resp_mock)
+
+          expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
           client = Client.new(SPEC_URL, :timeout => 10000)
-          client.foo(1,2,3).should == 42
+          expect(client.foo(1,2,3)).to eq 42
         end
 
         it "sends a valid JSON-RPC request with custom content_type" do
-          response = MultiJson.encode(BOILERPLATE.merge({'result' => 42}))
-          RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: @expected, headers: {:content_type => 'application/json-rpc', :timeout => 10000}).and_return(@resp_mock)
-          @resp_mock.should_receive(:body).at_least(:once).and_return(response)
+          response = MultiJson.dump(BOILERPLATE.merge({'result': 42}))
+
+          expect(RestClient::Request).to receive(:execute).with({
+                                                                  method: :post,
+                                                                  url: SPEC_URL,
+                                                                  payload: @expected,
+                                                                  headers: { content_type: 'application/json-rpc', timeout: 10000 } })
+                                                          .and_return(@resp_mock)
+
+          expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
           client = Client.new(SPEC_URL, :timeout => 10000, :content_type => 'application/json-rpc')
-          client.foo(1,2,3).should == 42
+          expect(client.foo(1,2,3)).to eq 42
         end
 
         it "adds RestClient::Request parameters if given" do
-          response = MultiJson.encode(BOILERPLATE.merge({'result' => 42}))
-          RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: @expected, headers: {:content_type => 'application/json-rpc', :timeout => 10000}, ssl_ca_file: 'myca.pem').and_return(@resp_mock)
-          @resp_mock.should_receive(:body).at_least(:once).and_return(response)
+          response = MultiJson.dump(BOILERPLATE.merge({'result': 42}))
+
+          expect(RestClient::Request).to receive(:execute).with({
+                                                                  method: :post,
+                                                                  url: SPEC_URL,
+                                                                  payload: @expected,
+                                                                  ssl_ca_file: 'myca.pem',
+                                                                  headers: { content_type: 'application/json-rpc', timeout: 10000 } })
+                                                          .and_return(@resp_mock)
+
+          expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
           client = Client.new(SPEC_URL, {:timeout => 10000, :content_type => 'application/json-rpc'}, '', {ssl_ca_file: 'myca.pem'})
-          client.foo(1,2,3).should == 42
+          expect(client.foo(1,2,3)).to eq 42
         end
       end
 
       context "when one of the parameters is an array" do
         it "sends a correct JSON-RPC request (array is preserved) and returns the result" do
-          expected = MultiJson.encode({
+          expected = MultiJson.dump({
             'jsonrpc' => '2.0',
             'method'  => 'foo',
             'params'  => [[1,2],3],
             'id'      => 1
           })
-          response = MultiJson.encode(BOILERPLATE.merge({'result' => 42}))
-          RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: expected, headers: {:content_type => 'application/json'}).and_return(@resp_mock)
-          @resp_mock.should_receive(:body).at_least(:once).and_return(response)
+          response = MultiJson.dump(BOILERPLATE.merge({'result': 42}))
+
+          expect(RestClient::Request).to receive(:execute).with({
+                                                                  method: :post,
+                                                                  url: SPEC_URL,
+                                                                  payload: expected,
+                                                                  headers: { content_type: 'application/json' } })
+                                                          .and_return(@resp_mock)
+
+          expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
           client = Client.new(SPEC_URL)
-          client.foo([1,2],3).should == 42
+          expect(client.foo([1,2],3)).to eq 42
         end
       end
 
       context "when one of the parameters is a hash" do
         it "sends a correct JSON-RPC request (array is preserved with hash) and returns the results" do
-          expected = MultiJson.encode({
+          expected = MultiJson.dump({
             'jsonrpc' => '2.0',
             'method'  => 'foo',
             'params'  => [1,{'bar' => 'baz'},3],
             'id'      => 1
           })
-          response = MultiJson.encode(BOILERPLATE.merge({'result' => 42}))
-          RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: expected, headers: {:content_type => 'application/json'}).and_return(@resp_mock)
-          @resp_mock.should_receive(:body).at_least(:once).and_return(response)
+          response = MultiJson.dump(BOILERPLATE.merge({'result': 42}))
+
+          expect(RestClient::Request).to receive(:execute).with({
+                                                                  method: :post,
+                                                                  url: SPEC_URL,
+                                                                  payload: expected,
+                                                                  headers: { content_type: 'application/json' } })
+                                                          .and_return(@resp_mock)
+
+          expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
           client = Client.new(SPEC_URL)
-          client.foo(1, {'bar' => 'baz'}, 3).should == 42
+          expect(client.foo(1, {'bar' => 'baz'}, 3)).to eq 42
         end
       end
 
@@ -200,34 +287,49 @@ module Jimson
             'params'  => {'bar' => 'baz'},
             'id'      => 1
           })
-          response = MultiJson.encode(BOILERPLATE.merge({'result' => 42}))
-          RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: expected, headers: {:content_type => 'application/json'}).and_return(@resp_mock)
-          @resp_mock.should_receive(:body).at_least(:once).and_return(response)
+          response = MultiJson.dump(BOILERPLATE.merge({'result': 42}))
+
+          expect(RestClient::Request).to receive(:execute).with({
+                                                                  method: :post,
+                                                                  url: SPEC_URL,
+                                                                  payload: expected,
+                                                                  headers: { content_type: 'application/json' } })
+                                                          .and_return(@resp_mock)
+
+          expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
           client = Client.new(SPEC_URL)
-          client.foo({'bar' => 'baz'}).should == 42
+          expect(client.foo({'bar' => 'baz'})).to eq 42
         end
       end
     end
 
     describe "sending a batch request" do
       it "sends a valid JSON-RPC batch request and puts the results in the response objects" do
-        batch = MultiJson.encode([
+        batch = MultiJson.dump([
           {"jsonrpc" => "2.0", "method" => "sum", "params" => [1,2,4], "id" => "1"},
           {"jsonrpc" => "2.0", "method" => "subtract", "params" => [42,23], "id" => "2"},
           {"jsonrpc" => "2.0", "method" => "foo_get", "params" => {"name" => "myself"}, "id" => "5"},
           {"jsonrpc" => "2.0", "method" => "get_data", "id" => "9"}
         ])
 
-        response = MultiJson.encode([
+        response = MultiJson.dump([
           {"jsonrpc" => "2.0", "result" => 7, "id" => "1"},
           {"jsonrpc" => "2.0", "result" => 19, "id" => "2"},
           {"jsonrpc" => "2.0", "error" => {"code" => -32601, "message" => "Method not found."}, "id" => "5"},
           {"jsonrpc" => "2.0", "result" => ["hello", 5], "id" => "9"}
         ])
 
-        ClientHelper.stub(:make_id).and_return('1', '2', '5', '9')
-        RestClient::Request.should_receive(:execute).with(method: :post, url: SPEC_URL, payload: batch, headers: {:content_type => 'application/json'}, ssl_ca_file: 'myca.pem').and_return(@resp_mock)
-        @resp_mock.should_receive(:body).at_least(:once).and_return(response)
+        allow(ClientHelper).to receive(:make_id).and_return('1', '2', '5', '9')
+        expect(RestClient::Request).to receive(:execute).with({
+                                                                method: :post,
+                                                                url: SPEC_URL,
+                                                                payload: batch,
+                                                                ssl_ca_file: 'myca.pem',
+                                                                headers: { content_type: 'application/json' } })
+                                                        .and_return(@resp_mock)
+
+        expect(@resp_mock).to receive(:body).at_least(:once).and_return(response)
+
         client = Client.new(SPEC_URL, {}, '', {ssl_ca_file: 'myca.pem'})
 
         sum = subtract = foo = data = nil
@@ -237,6 +339,7 @@ module Jimson
           foo = batch.foo_get('name' => 'myself')
           data = batch.get_data
         end
+
 
         sum.succeeded?.should be true
         sum.is_error?.should be false
