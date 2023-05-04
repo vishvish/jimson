@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = ['README.md']
   s.add_dependency('blankslate',  '>= 3.1.3')
   s.add_dependency('multi_json', '>= 1.15.0')
-  s.add_dependency('rack', '>= 3.0.7')
+  s.add_dependency('rack', '>= 2.2.0')
   s.add_dependency('rest-client', '>= 2.1.0')
   s.add_development_dependency('rack-test')
   s.add_development_dependency('rake')
